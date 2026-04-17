@@ -1,0 +1,97 @@
+# ============================================================
+# Election Prediction 2026 — Master Config
+# ============================================================
+
+project:
+  name: "IndiaElection2026"
+  version: "1.0.0"
+  target_year: 2026
+  submission_deadline: "2026-04-30"
+
+states:
+  tamil_nadu:
+    total_constituencies: 234
+    election_years: [2011, 2016, 2021]
+    major_parties: ["DMK", "AIADMK", "BJP", "INC", "VCK", "PMK", "DMDK", "TVK"]
+    ruling_party_2021: "DMK"
+    key_alliances:
+      secular_front: ["DMK", "INC", "VCK", "CPI", "CPI(M)", "IUML", "MDMK"]
+      aiadmk_front: ["AIADMK", "BJP", "PMK"]
+
+  kerala:
+    total_constituencies: 140
+    election_years: [2011, 2016, 2021]
+    major_parties: ["LDF", "UDF", "NDA", "CPIM", "INC", "BJP", "IUML"]
+    ruling_party_2021: "LDF"
+
+  west_bengal:
+    total_constituencies: 294
+    election_years: [2011, 2016, 2021]
+    major_parties: ["TMC", "BJP", "INC", "CPIM", "ISF", "SUCI"]
+    ruling_party_2021: "TMC"
+
+  assam:
+    total_constituencies: 126
+    election_years: [2011, 2016, 2021]
+    major_parties: ["BJP", "INC", "AGP", "AIUDF", "BPF", "UPPL"]
+    ruling_party_2021: "BJP"
+
+  puducherry:
+    total_constituencies: 30
+    election_years: [2011, 2016, 2021]
+    major_parties: ["INC", "AINRC", "BJP", "DMK", "AIADMK"]
+    ruling_party_2021: "NDA_AINRC"
+
+data:
+  raw_path: "data/raw/"
+  processed_path: "data/processed/"
+  external_path: "data/external/"
+  # Expected ECI column names (standardize to these)
+  required_columns:
+    - constituency_no
+    - constituency_name
+    - state
+    - year
+    - candidate_name
+    - party
+    - votes
+    - total_electors
+    - total_votes_polled
+    - position   # 1 = winner
+
+features:
+  trend_window: 3            # elections to look back
+  swing_damping: 0.7         # how much national/state swing affects local
+  volatility_threshold: 0.15 # vote share std above this = volatile seat
+  stronghold_threshold: 3    # wins in last N elections = stronghold
+  margin_safe_threshold: 10  # % margin above which seat is "safe"
+  margin_swing_threshold: 5  # % margin below which seat is "toss-up"
+
+model:
+  primary: "lightgbm"
+  task_vote_share: "regression"
+  task_winner: "classification"
+  cv_folds: 3                # time-aware: train on t-2,t-1, validate on t
+  random_state: 42
+  lgbm_params:
+    n_estimators: 500
+    learning_rate: 0.05
+    num_leaves: 63
+    max_depth: -1
+    min_child_samples: 20
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    reg_alpha: 0.1
+    reg_lambda: 0.1
+    verbose: -1
+
+confidence:
+  high_threshold: 0.75       # model prob above this = high confidence
+  low_threshold: 0.55        # model prob below this = flag for human review
+  flag_for_review_margin: 8  # predicted margin below 8% → flag
+
+output:
+  prediction_file: "outputs/predictions/final_predictions.xlsx"
+  report_file: "outputs/reports/methodology_note.txt"
+  model_dir: "outputs/models/"
